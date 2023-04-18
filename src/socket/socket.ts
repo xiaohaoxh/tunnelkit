@@ -1,47 +1,30 @@
-import Utils from "../utils/Utils";
+export class SocketImpl implements Socket {
+    private ws!: WebSocket;
+    private callback!: SocketCallback;
 
-export class SocketManager {
-
-}
-
-export class SocketImpl {
-    private websocket: WebSocket;
-    private lastSendTime: number;
-    private lastReceivedTime: number;
-
-    constructor(url: string, callback: SocketCallback) {
-        this.websocket = new WebSocket(url);
-        this.websocket!.onopen = () => {
-            callback!.onOpen();
-        };
-        this.websocket!.onmessage = (ev: MessageEvent) => {
-            callback!.onMessage(ev.data);
-        };
-        this.websocket!.onclose = () => {
-            callback!.onClose();
-        };
-        this.websocket!.onerror = () => {
-            callback!.onError();
-        };
+    constructor(url: string) {
+        this.ws = new WebSocket(url);
+        this.ws.onopen = () => {
+            if (this.callback) {
+                this.callback.onOpen();
+            }
+        }
+        this.ws.onmessage= (ev: MessageEvent) => {
+            if (this.callback) {
+                this.callback.onMessage(ev.data);
+            }
+        }
     }
 
-    public ping(): void {
-
+    public write(data: string | ArrayBuffer): void {
+        this.ws.send(data);
     }
 
-    public send(data: string | ArrayBuffer) {
-        this.lastReceivedTime = Utils.timestamp();
-        this.websocket.send(data);
+    public close(code?: number | undefined, reason?: string | undefined): void {
+        this.ws.close(code, reason);
     }
 
-    public close(code?: number, reason?: string): void {
-        this.websocket!.close(code, reason);
+    public setCallback(callback: SocketCallback): void {
+        this.callback = callback;
     }
-}
-
-interface SocketCallback {
-    onMessage(data: string | ArrayBuffer);
-    onOpen(): void;
-    onClose(): void;
-    onError(): void;
 }

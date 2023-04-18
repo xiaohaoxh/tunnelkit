@@ -1,23 +1,19 @@
-export default class TunnelKit implements TunnelKitImpl {
+export default class TunnelKit implements Tunnel {
 
-    constructor(address: AddressDelegate) {
-
+    start(): void {
+        
     }
 
-    public start(): void {
-
+    stop(): void {
+        
     }
 
-    public close(): void {
-
+    onMessage(data: string | ArrayBuffer) {
+        
     }
-}
 
-interface AddressDelegate {
-    getAddress(): string[]
-}
+    onClose(): void {
+        
+    }
 
-interface TunnelKitImpl {
-    start(): void;
-    close(): void;
 }

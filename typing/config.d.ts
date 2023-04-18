@@ -1,0 +1,3 @@
+type TunnelConfig =  {
+    maxConnectionCount: number
+}
