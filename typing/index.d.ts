@@ -6,15 +6,15 @@ interface Tunnel {
 }
 
 interface Socket {
-    write(data: string | ArrayBuffer): void;
+    send(data: string | ArrayBuffer): void;
     close(code?: number, reason?: string): void;
-    setCallback(callback: SocketCallback): void;
 }
 
 interface SocketCallback {
     onOpen(): void;
     onMessage(data: string | ArrayBuffer);
     onClose(): void;
+    onError(): void;
 }
 
 interface ConnectionCore {
@@ -23,4 +23,24 @@ interface ConnectionCore {
 
 interface AddressDelegate {
     getAddresses(): string[];
+}
+
+interface Connection {
+
+    connect(): void;
+
+    close(): void;
+
+    send(data: string | ArrayBuffer): void;
+
+    ping(): void;
+    
+    onConnect(): void;
+
+    onMessage(data: string | ArrayBuffer): void;
+
+    onClose(): void;
+
+    onError(): void;
+
 }

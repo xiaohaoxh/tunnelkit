@@ -5,18 +5,20 @@ export class SocketImpl implements Socket {
     constructor(url: string) {
         this.ws = new WebSocket(url);
         this.ws.onopen = () => {
-            if (this.callback) {
-                this.callback.onOpen();
-            }
+            this.callback && this.callback.onOpen();
         }
-        this.ws.onmessage= (ev: MessageEvent) => {
-            if (this.callback) {
-                this.callback.onMessage(ev.data);
-            }
+        this.ws.onmessage = (ev: MessageEvent) => {
+            this.callback && this.callback.onMessage(ev.data);
+        }
+        this.ws.onclose = () => {
+            this.callback && this.callback.onClose();
+        }
+        this.ws.onerror = () => {
+            this.callback && this.callback.onError();
         }
     }
 
-    public write(data: string | ArrayBuffer): void {
+    public send(data: string | ArrayBuffer): void {
         this.ws.send(data);
     }
 

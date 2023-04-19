@@ -15,29 +15,6 @@ export default class ConnectionManager {
     }
 
     public startRacing(): void {
-        let that = this;
-        new Promise((resolve, reject) => {
-            const urls: string[] = this.addressDelegate.getAddresses();
-            urls.forEach(url => {
-                const connection = new Connection(url);
-
-                let callback: SocketCallback = {
-                    onOpen() {
-                        resolve(connection);
-                    },
-                    onMessage(data) {
-                        that.tunnel.onMessage(data);
-                    },
-                    onClose() {
-                        that.tunnel.onClose();
-                        that.reconnect();
-                    }
-                }
-                connection.setCallback(callback);
-            })
-        }).then(res => {
-            this.addConnection(res as unknown as Connection);
-        })
     }
 
     private addConnection(connection: Connection): void {
@@ -56,25 +33,67 @@ export default class ConnectionManager {
 
 }
 
-class Connection {
+class ConnectionImpl implements Connection {
 
-    private connection!: SocketImpl;
-    private lastWriteTime: number;
+    private url!: string;
+    private config!: ConnectionConfig;
+    private socket!: SocketImpl;
+    private lastSendTime!: number;
+    private lastReceivedTime!: number;
 
-    constructor(url: string) {
-        this.connection = new SocketImpl(url);
+    constructor(url: string, config: ConnectionConfig) {
+        this.url = url;
+        this.config = config;
     }
 
-    public ping() {
-
+    connect(): void {
+        let that = this;
+        this.socket = new SocketImpl(this.url);
+        let callback: SocketCallback = {
+            onOpen() {
+                that.onConnect();
+            },
+            onMessage(data) {
+                that.onMessage(data);
+            },
+            onClose() {
+                that.onClose();
+            },
+            onError() {
+                that.onError();
+            }
+        }
+        this.socket.setCallback(callback);
     }
 
-    public setCallback(callback: SocketCallback): void {
-        this.connection.setCallback(callback);
+    close(): void {
+        this.socket.close();
     }
 
-    public write(data: string | ArrayBuffer): void {
-        this.lastWriteTime = Utils.timestamp();
-        this.connection.write(data);
+    send(data: string | ArrayBuffer): void {
+        this.lastSendTime = Utils.timestamp();
+        this.socket.send(data);
+    }
+
+    ping(): void {
+        if (Utils.timestamp() - this.lastReceivedTime >= this.config.headbeatIntervals) {
+            this.send(new ArrayBuffer(1));
+        }
+    }
+
+    onConnect(): void {
+        
+    }
+
+    onClose(): void {
+        
+    }
+
+    onMessage(data: string | ArrayBuffer): void {
+        this.lastReceivedTime = Utils.timestamp();
+    }
+
+    onError(): void {
+        
     }
 }
