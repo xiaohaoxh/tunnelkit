@@ -1,13 +1,14 @@
 import Utils from "../utils/Utils";
+import TunnelKit from "../core/tunnelkit";
 import { SocketImpl } from "../socket/socket";
 
 export default class ConnectionManager {
     private connectionPool: Set<Connection>;
-    private tunnel: Tunnel;
-    private config: TunnelConfig;
-    private addressDelegate: AddressDelegate;
+    private tunnel!: TunnelKit;
+    private config!: TunnelConfig;
+    private addressDelegate!: AddressDelegate;
 
-    constructor(tunnel: Tunnel, config: TunnelConfig, addressDelegate: AddressDelegate) {
+    constructor(tunnel: TunnelKit, config: TunnelConfig, addressDelegate: AddressDelegate) {
         this.connectionPool = new Set();
         this.tunnel = tunnel;
         this.config = config;
@@ -15,10 +16,40 @@ export default class ConnectionManager {
     }
 
     public startRacing(): void {
+        const that = this;
+        const urls: string[] = this.addressDelegate.getAddresses();
+        urls.forEach(url => {
+            new Promise((resolve, reject) => {
+                const connectionConfig = this.tunnel.getConfig().connectionConfig;
+                const connection: ConnectionImpl = new ConnectionImpl(url, connectionConfig);
+                const callback: SocketCallback = {
+                    onOpen() {
+                        resolve(connection);
+                    },
+                    onClose() {
+                        reject(connection);
+                    },
+                    onMessage(data) {
+                        
+                    },
+                    onError() {
+                        reject(connection);
+                    },
+                }
+                connection.setCallback(callback);
+                connection.connect();
+                
+            }).then(connection => {
+                this.addConnection(connection as unknown as Connection);
+            }).catch(connection => {
+                this.removeConnection(connection as unknown as Connection);
+                this.reconnect();
+            })
+        })
     }
 
     private addConnection(connection: Connection): void {
-        if (this.connectionPool.size < this.config.maxConnectionCount) {
+        if (this.connectionPool.size <= this.config.maxConnectionCount) {
             this.connectionPool.add(connection);
         }
     }
@@ -30,7 +61,6 @@ export default class ConnectionManager {
     private reconnect(): void {
 
     }
-
 }
 
 class ConnectionImpl implements Connection {
@@ -40,6 +70,7 @@ class ConnectionImpl implements Connection {
     private socket!: SocketImpl;
     private lastSendTime!: number;
     private lastReceivedTime!: number;
+    private callback!: SocketCallback;
 
     constructor(url: string, config: ConnectionConfig) {
         this.url = url;
@@ -51,16 +82,16 @@ class ConnectionImpl implements Connection {
         this.socket = new SocketImpl(this.url);
         let callback: SocketCallback = {
             onOpen() {
-                that.onConnect();
+                that.callback.onOpen();
             },
             onMessage(data) {
-                that.onMessage(data);
+                that.callback.onMessage(data);
             },
             onClose() {
-                that.onClose();
+                that.callback.onClose();
             },
             onError() {
-                that.onError();
+                that.callback.onError();
             }
         }
         this.socket.setCallback(callback);
@@ -76,24 +107,14 @@ class ConnectionImpl implements Connection {
     }
 
     ping(): void {
-        if (Utils.timestamp() - this.lastReceivedTime >= this.config.headbeatIntervals) {
+        if (Utils.timestamp() - this.lastReceivedTime >= this.config.heartbeatIntervals) {
             this.send(new ArrayBuffer(1));
         }
     }
 
-    onConnect(): void {
-        
+    setCallback(callback: SocketCallback): void {
+        this.callback = callback;
     }
 
-    onClose(): void {
-        
-    }
-
-    onMessage(data: string | ArrayBuffer): void {
-        this.lastReceivedTime = Utils.timestamp();
-    }
-
-    onError(): void {
-        
-    }
 }
+

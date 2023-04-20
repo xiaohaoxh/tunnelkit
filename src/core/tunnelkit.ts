@@ -1,4 +1,9 @@
 export default class TunnelKit implements Tunnel {
+    private config!: TunnelConfig;
+
+    constructor(config: TunnelConfig) {
+        this.config = config;
+    }
 
     start(): void {
         
@@ -8,12 +13,24 @@ export default class TunnelKit implements Tunnel {
         
     }
 
+    onOpen(): void {
+        
+    }
+
     onMessage(data: string | ArrayBuffer) {
         
     }
 
     onClose(): void {
         
+    }
+
+    onError(): void {
+        
+    }
+
+    getConfig(): TunnelConfig {
+        return this.config;
     }
 
 }
