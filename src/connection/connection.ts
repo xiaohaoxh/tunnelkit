@@ -1,8 +1,11 @@
 import Utils from "../utils/Utils";
 import TunnelKit from "../core/tunnelkit";
 import { SocketImpl } from "../socket/socket";
+import EventEmitter from "events";
+import Logger from "../log/Logger";
 
 export default class ConnectionManager {
+    private readonly TAG: string = 'ConnectionManager';
     private connectionPool: Set<Connection>;
     private tunnel!: TunnelKit;
     private config!: TunnelConfig;
@@ -18,33 +21,40 @@ export default class ConnectionManager {
     public startRacing(): void {
         const that = this;
         const urls: string[] = this.addressDelegate.getAddresses();
+        let promises: Promise<ConnectionImpl>[] = [];
         urls.forEach(url => {
-            new Promise((resolve, reject) => {
+            const promise: Promise<ConnectionImpl> = new Promise<ConnectionImpl>((resolve, reject) => {
                 const connectionConfig = this.tunnel.getConfig().connectionConfig;
-                const connection: ConnectionImpl = new ConnectionImpl(url, connectionConfig);
-                const callback: SocketCallback = {
-                    onOpen() {
-                        resolve(connection);
-                    },
-                    onClose() {
-                        reject(connection);
-                    },
-                    onMessage(data) {
-                        
-                    },
-                    onError() {
-                        reject(connection);
-                    },
-                }
-                connection.setCallback(callback);
+                const emitter = new EventEmitter();
+                const connection: ConnectionImpl = new ConnectionImpl(url, connectionConfig, emitter);
+                emitter.on('open', _ => {
+                    resolve(connection);
+                });
+                emitter.on('data', _ => {
+
+                });
+                emitter.on('close', _ => {
+                    reject(connection);
+                });
+                emitter.on('error', _ => {
+
+                });
                 connection.connect();
                 
             }).then(connection => {
-                this.addConnection(connection as unknown as Connection);
+                this.addConnection(connection);
+                return connection;
             }).catch(connection => {
-                this.removeConnection(connection as unknown as Connection);
-                this.reconnect();
-            })
+                return connection;
+            });
+            promises.push(promise);
+        })
+        Promise.all(promises).then(connecitons => {
+
+        }).catch(connections => {
+
+        }).finally(() => {
+            Logger.debug(this.TAG, 'racing complete.');
         })
     }
 
@@ -70,31 +80,17 @@ class ConnectionImpl implements Connection {
     private socket!: SocketImpl;
     private lastSendTime!: number;
     private lastReceivedTime!: number;
-    private callback!: SocketCallback;
+    private emitter!: EventEmitter;
 
-    constructor(url: string, config: ConnectionConfig) {
+    constructor(url: string, config: ConnectionConfig, emitter: EventEmitter) {
         this.url = url;
         this.config = config;
+        this.emitter = emitter;
     }
 
     connect(): void {
         let that = this;
-        this.socket = new SocketImpl(this.url);
-        let callback: SocketCallback = {
-            onOpen() {
-                that.callback.onOpen();
-            },
-            onMessage(data) {
-                that.callback.onMessage(data);
-            },
-            onClose() {
-                that.callback.onClose();
-            },
-            onError() {
-                that.callback.onError();
-            }
-        }
-        this.socket.setCallback(callback);
+        this.socket = new SocketImpl(this.url, this.emitter);
     }
 
     close(): void {
@@ -111,10 +107,5 @@ class ConnectionImpl implements Connection {
             this.send(new ArrayBuffer(1));
         }
     }
-
-    setCallback(callback: SocketCallback): void {
-        this.callback = callback;
-    }
-
 }
 

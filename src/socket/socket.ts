@@ -1,20 +1,20 @@
+import EventEmitter from 'events'
 export class SocketImpl implements Socket {
     private ws!: WebSocket;
-    private callback!: SocketCallback;
 
-    constructor(url: string) {
+    constructor(url: string, emitter: EventEmitter) {
         this.ws = new WebSocket(url);
         this.ws.onopen = () => {
-            this.callback && this.callback.onOpen();
+            emitter.emit('open');
         }
         this.ws.onmessage = (ev: MessageEvent) => {
-            this.callback && this.callback.onMessage(ev.data);
+            emitter.emit('data', ev.data);
         }
         this.ws.onclose = () => {
-            this.callback && this.callback.onClose();
+            emitter.emit('close');
         }
         this.ws.onerror = () => {
-            this.callback && this.callback.onError();
+            emitter.emit('error');
         }
     }
 
@@ -24,9 +24,5 @@ export class SocketImpl implements Socket {
 
     public close(code?: number | undefined, reason?: string | undefined): void {
         this.ws.close(code, reason);
-    }
-
-    public setCallback(callback: SocketCallback): void {
-        this.callback = callback;
     }
 }

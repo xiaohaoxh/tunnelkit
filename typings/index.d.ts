@@ -12,13 +12,6 @@ interface Socket {
     close(code?: number, reason?: string): void;
 }
 
-interface SocketCallback {
-    onOpen(): void;
-    onMessage(data: string | ArrayBuffer);
-    onClose(): void;
-    onError(): void;
-}
-
 interface ConnectionCore {
     ping(): void;
 }
@@ -28,7 +21,6 @@ interface AddressDelegate {
 }
 
 interface Connection {
-
     connect(): void;
 
     close(): void;
