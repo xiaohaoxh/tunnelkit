@@ -1,5 +1,5 @@
 import EventEmitter from 'events'
-export class SocketImpl implements Socket {
+export class SocketImpl {
     private ws!: WebSocket;
 
     constructor(url: string, emitter: EventEmitter) {

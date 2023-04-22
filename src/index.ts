@@ -1,5 +1,3 @@
-export default class Utils {
-    public static timestamp(): number {
-        return Date.now();
-    }
-}
+import TunnelKit from "./core/tunnelkit";
+
+export default TunnelKit;
