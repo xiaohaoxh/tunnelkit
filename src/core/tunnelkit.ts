@@ -1,4 +1,5 @@
 import ConnectionManager from "../connection/connection";
+import { TunnelConfig } from "../../typings/config";
 
 export default class TunnelKit {
     private config!: TunnelConfig;
@@ -6,7 +7,7 @@ export default class TunnelKit {
 
     constructor(config: TunnelConfig) {
         this.config = config;
-        this.connectionManager = new ConnectionManager(this, config, []);
+        this.connectionManager = new ConnectionManager(this, config, ['ws://localhost:8000']);
     }
 
     start(): void {

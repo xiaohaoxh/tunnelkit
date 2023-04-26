@@ -3,6 +3,7 @@ import TunnelKit from "../core/tunnelkit";
 import { SocketImpl } from "../socket/socket";
 import EventEmitter from "events";
 import Logger from "../log/Logger";
+import { TunnelConfig, ConnectionConfig } from "../../typings/config";
 
 export default class ConnectionManager {
     private readonly TAG: string = 'ConnectionManager';
@@ -116,8 +117,8 @@ class Connection {
     private config!: ConnectionConfig;
     private socket!: SocketImpl;
     private emitter!: EventEmitter;
-    private heartbeatTask!: number;
-    private pingTimeout!: number;
+    private heartbeatTask!: any;
+    private pingTimeout!: any;
 
     constructor(url: string, config: ConnectionConfig, emitter: EventEmitter) {
         this.url = url;

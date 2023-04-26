@@ -3,7 +3,7 @@ export default class Utils {
         return Date.now();
     }
 
-    public static scheme(task: Function, delay: number): number {
+    public static scheme(task: () => void, delay: number): any {
         return setTimeout(task, delay);
     }
 

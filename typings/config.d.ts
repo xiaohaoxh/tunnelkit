@@ -1,8 +1,12 @@
-type TunnelConfig =  {
+declare type TunnelConfig =  {
     maxConnectionCount: number,
     connectionConfig: ConnectionConfig
 }
 
-type ConnectionConfig = {
+declare type ConnectionConfig = {
     heartbeatIntervals: number
+}
+
+export {
+    TunnelConfig, ConnectionConfig
 }
